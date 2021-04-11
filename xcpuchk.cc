@@ -16,7 +16,7 @@ void odd()
 {
     odd_ready.store(1, store_order);
 
-    while (!go);
+    while (!go.load(load_order));
 
     while (x < done_x) {
         unsigned n = x.load(load_order);
@@ -32,7 +32,7 @@ void even()
 {
     even_ready.store(1, store_order);
 
-    while (!go);
+    while (!go.load(load_order));
 
     while (x < done_x) {
         unsigned n = x.load(load_order);
