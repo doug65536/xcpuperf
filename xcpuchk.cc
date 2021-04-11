@@ -18,8 +18,8 @@ void odd()
 
     while (!go.load(load_order));
 
-    while (x < done_x) {
-        unsigned n = x.load(load_order);
+    unsigned n;
+    while ((n = x.load(load_order)) < done_x) {
         if (n & 1)
             x.store(n + 1, store_order);
     }
@@ -34,8 +34,8 @@ void even()
 
     while (!go.load(load_order));
 
-    while (x < done_x) {
-        unsigned n = x.load(load_order);
+    unsigned n;
+    while ((n = x.load(load_order)) < done_x) {
         if (!(n & 1))
             x.store(n + 1, store_order);
     }
