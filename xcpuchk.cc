@@ -72,7 +72,8 @@ void test(unsigned cpus)
 
         go.store(1, store_order);
 
-        while (even_ready || odd_ready);
+        while (even_ready.load(load_order) ||
+               odd_ready.load(load_order));
         auto en = std::chrono::high_resolution_clock::now();
 
         std::chrono::high_resolution_clock::duration elap =
