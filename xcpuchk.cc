@@ -48,44 +48,61 @@ void test(unsigned cpus)
 {
     cpu_set_t cpuset;
 
-    for (unsigned i = 1; i < cpus; ++i)  {
-        odd_ready.store(0, store_order);
-        even_ready.store(0, store_order);
+    for (unsigned c1 = 0; c1 < cpus; ++c1)  {
+        for (unsigned c2 = 0; c2 < cpus; ++c2)  {
+            if (c1 != c2) {
+                odd_ready.store(0, store_order);
+                even_ready.store(0, store_order);
 
-        std::thread t1(odd<load_order, store_order>);
-        std::thread t2(even<load_order, store_order>);
+                std::thread t1(odd<load_order, store_order>);
+                std::thread t2(even<load_order, store_order>);
 
-        CPU_ZERO(&cpuset);
-        CPU_SET(0, &cpuset);
-        pthread_setaffinity_np(t1.native_handle(),
-                               sizeof(cpu_set_t), &cpuset);
+                CPU_ZERO(&cpuset);
+                CPU_SET(c1, &cpuset);
+                pthread_setaffinity_np(t1.native_handle(),
+                                       sizeof(cpu_set_t), &cpuset);
 
-        CPU_ZERO(&cpuset);
-        CPU_SET(i, &cpuset);
-        pthread_setaffinity_np(t2.native_handle(),
-                               sizeof(cpu_set_t), &cpuset);
+                CPU_ZERO(&cpuset);
+                CPU_SET(c2, &cpuset);
+                pthread_setaffinity_np(t2.native_handle(),
+                                       sizeof(cpu_set_t), &cpuset);
 
-        while (!odd_ready.load(load_order));
-        while (!even_ready.load(load_order));
-        x.store(0, store_order);
-        auto st = std::chrono::high_resolution_clock::now();
+                while (!odd_ready.load(load_order));
+                while (!even_ready.load(load_order));
+                x.store(0, store_order);
+                auto st = std::chrono::high_resolution_clock::now();
 
-        go.store(1, store_order);
+                go.store(1, store_order);
 
-        while (even_ready.load(load_order) ||
-               odd_ready.load(load_order));
-        auto en = std::chrono::high_resolution_clock::now();
+                while (even_ready.load(load_order) ||
+                       odd_ready.load(load_order));
+                auto en = std::chrono::high_resolution_clock::now();
 
-        std::chrono::high_resolution_clock::duration elap =
-                std::chrono::duration_cast<std::chrono::nanoseconds>(en - st);
+                std::chrono::high_resolution_clock::duration elap =
+                        std::chrono::duration_cast<
+                        std::chrono::nanoseconds>(en - st);
 
-        printf("0<->%2u %3luns\n", i, elap.count() / done_x);
+                if (c2 == 0)
+                    printf("\n%2u", c1);
 
-        t1.join();
-        t2.join();
+                printf(" %3lu", elap.count() / done_x);
 
-        go.store(0, store_order);
+                t1.join();
+                t2.join();
+
+                go.store(0, store_order);
+            } else {
+                if (c2 == 0)
+                    printf("\n%2u", c1);
+
+                printf(" %3s", "---");
+            }
+
+            fflush(stdout);
+        }
     }
+
+    puts("");
 }
 
 int main()
